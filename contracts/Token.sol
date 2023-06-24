@@ -6,16 +6,16 @@ pragma solidity ^0.8.9;
 
 // We import this library to be able to use console.log
 import "hardhat/console.sol";
-
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // This is the main building block for smart contracts.
 contract Token {
     // Some string type variables to identify the token.
-    string public name = "My Hardhat Token";
-    string public symbol = "MHT";
+    string public name = "Quadrant Token";
+    string public symbol = "QUAD";
 
     // The fixed amount of tokens stored in an unsigned integer type variable.
-    uint256 public totalSupply = 1000000;
+    uint256 public totalSupply = 1000000000;
 
     // An address type variable is used to store ethereum accounts.
     address public owner;

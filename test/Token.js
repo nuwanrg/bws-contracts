@@ -107,5 +107,13 @@ describe("Token contract", function () {
         initialOwnerBalance
       );
     });
+
+    // it("Get ETH exchange rate", async function () {
+    //   const { hardhatToken, owner, addr1 } = await loadFixture(deployTokenFixture);
+    //   const ethExRate = await hardhatToken.getEthExchangeRate();
+
+    //   console.log('ethExRate ', ethExRate);
+    // });
+
   });
 });

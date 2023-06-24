@@ -15,12 +15,14 @@ import { NoWalletDetected } from "./NoWalletDetected";
 import { ConnectWallet } from "./ConnectWallet";
 import { Loading } from "./Loading";
 import { Transfer } from "./Transfer";
+import { Trade } from "./Trade";
 import { TransactionErrorMessage } from "./TransactionErrorMessage";
 import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
 import { NoTokensMessage } from "./NoTokensMessage";
+import { DisConnectWallet } from "./DisConnectWallet";
 
 // This is the default id used by the Hardhat Network
-const HARDHAT_NETWORK_ID = '31337';
+const HARDHAT_NETWORK_ID = "31337";
 
 // This is an error code that indicates that the user canceled a transaction
 const ERROR_CODE_TX_REJECTED_BY_USER = 4001;
@@ -72,8 +74,8 @@ export class Dapp extends React.Component {
     // clicks a button. This callback just calls the _connectWallet method.
     if (!this.state.selectedAddress) {
       return (
-        <ConnectWallet 
-          connectWallet={() => this._connectWallet()} 
+        <ConnectWallet
+          connectWallet={() => this._connectWallet()}
           networkError={this.state.networkError}
           dismiss={() => this._dismissNetworkError()}
         />
@@ -155,6 +157,43 @@ export class Dapp extends React.Component {
             )}
           </div>
         </div>
+
+        <hr />
+
+        <div className="row">
+          <div className="col-12">
+            {/*
+              If the user has no tokens, we don't show the Transfer form
+            */}
+            {this.state.balance.eq(0) && (
+              <NoTokensMessage selectedAddress={this.state.selectedAddress} />
+            )}
+
+            {/*
+              This component displays a form that the user can use to send a 
+              transaction and transfer some tokens.
+              The component doesn't have logic, it just calls the transferTokens
+              callback.
+            */}
+            {this.state.balance.gt(0) && (
+              <Trade
+                transferTokens={(to, amount) =>
+                  this._transferTokens(to, amount)
+                }
+                tokenSymbol={this.state.tokenData.symbol}
+              />
+            )}
+          </div>
+        </div>
+        <div className="row">
+          {this.state.selectedAddress && (
+            <DisConnectWallet
+              disConnectWallet={() => this._connectWallet()}
+              networkError={this.state.networkError}
+              dismiss={() => this._dismissNetworkError()}
+            />
+          )}
+        </div>
       </div>
     );
   }
@@ -171,12 +210,15 @@ export class Dapp extends React.Component {
 
     // To connect to the user's wallet, we have to run this method.
     // It returns a promise that will resolve to the user's address.
-    const [selectedAddress] = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    const [selectedAddress] = await window.ethereum.request({
+      method: "eth_requestAccounts",
+    });
+    console.log("selectedAddress", selectedAddress);
 
     // Once we have the address, we can initialize the application.
 
     // First we check the network
-    this._checkNetwork();
+    // this._checkNetwork();
 
     this._initialize(selectedAddress);
 
@@ -186,11 +228,11 @@ export class Dapp extends React.Component {
       // `accountsChanged` event can be triggered with an undefined newAddress.
       // This happens when the user removes the Dapp from the "Connected
       // list of sites allowed access to your addresses" (Metamask > Settings > Connections)
-      // To avoid errors, we reset the dapp state 
+      // To avoid errors, we reset the dapp state
       if (newAddress === undefined) {
         return this._resetState();
       }
-      
+
       this._initialize(newAddress);
     });
   }
@@ -224,6 +266,8 @@ export class Dapp extends React.Component {
       TokenArtifact.abi,
       this._provider.getSigner(0)
     );
+
+    console.log("this._token ", this._token);
   }
 
   // The next two methods are needed to start and stop polling data. While
@@ -255,7 +299,10 @@ export class Dapp extends React.Component {
   }
 
   async _updateBalance() {
+    console.log("_updateBalance is called...");
+    console.log("this._token...", this._token);
     const balance = await this._token.balanceOf(this.state.selectedAddress);
+    console.log("_updateBalance after calling the blockchain...");
     this.setState({ balance });
   }
 
@@ -284,7 +331,9 @@ export class Dapp extends React.Component {
 
       // We send the transaction, and save its hash in the Dapp's state. This
       // way we can indicate that we are waiting for it to be mined.
+      console.log("before calling transfer method...");
       const tx = await this._token.transfer(to, amount);
+      console.log("after calling transfer method...");
       this.setState({ txBeingSent: tx.hash });
 
       // We use .wait() to wait for the transaction to be mined. This method
@@ -345,17 +394,47 @@ export class Dapp extends React.Component {
   }
 
   async _switchChain() {
-    const chainIdHex = `0x${HARDHAT_NETWORK_ID.toString(16)}`
-    await window.ethereum.request({
-      method: "wallet_switchEthereumChain",
-      params: [{ chainId: chainIdHex }],
-    });
-    await this._initialize(this.state.selectedAddress);
+    const chainIdHex = `0x${HARDHAT_NETWORK_ID.toString(16)}`;
+    console.log("chainIdHex ", chainIdHex);
+    // await window.ethereum.request({
+    //   method: "wallet_switchEthereumChain",
+    //   params: [{ chainId: chainIdHex }],
+    // });
+
+    if (window.ethereum && window.ethereum.isMetaMask) {
+      window.ethereum
+        .request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0x7a69" }],
+        })
+        .then(() => {
+          console.log("Wallet successfully switched to the desired chain");
+          this._initialize(this.state.selectedAddress);
+          // Wallet successfully switched to the desired chain
+          // Perform actions on the new chain
+        })
+        .catch((error) => {
+          // An error occurred while switching chains
+          console.error("Error switching chain:", error);
+          console.log("Error switching chain:", error);
+        });
+    }
+
+    console.log("network switched to ", chainIdHex);
+    // await this._initialize(this.state.selectedAddress);
   }
 
   // This method checks if the selected network is Localhost:8545
   _checkNetwork() {
+    console.log(
+      "window.ethereum.networkVersion ",
+      window.ethereum.networkVersion
+    );
     if (window.ethereum.networkVersion !== HARDHAT_NETWORK_ID) {
+      console.log(
+        "switching network... HARDHAT_NETWORK_ID ",
+        HARDHAT_NETWORK_ID
+      );
       this._switchChain();
     }
   }
