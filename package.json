@@ -33,7 +33,6 @@
     "@chainlink/contracts": "^0.6.1",
     "@nomiclabs/hardhat-waffle": "^2.0.6",
     "@openzeppelin/contracts": "^4.9.1",
-    "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "dotenv": "^16.1.4"
   }
 }
