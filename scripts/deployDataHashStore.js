@@ -22,11 +22,11 @@ async function main() {
 
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
-  const QuadToken = await ethers.getContractFactory("QuadToken");
-  const token = await QuadToken.deploy();
+  const DataHashStore = await ethers.getContractFactory("DataHashStore");
+  const token = await DataHashStore.deploy();
   await token.deployed();
 
-  console.log("Quad Token address:", token.address);
+  console.log("DataHashStore address:", token.address);
 
   // We also save the contract's artifacts and address in the frontend directory
   //saveFrontendFiles(token);
